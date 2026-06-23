@@ -17,3 +17,25 @@
     - name: Show installed version
       ansible.builtin.debug:
         var: k3s_version.stdout_lines
+
+- name: Install Helm and prepare kubeconfig access
+  hosts: k3s_servers
+  become: true
+
+  roles:
+    - helm
+
+  tasks:
+    - name: Ensure KUBECONFIG is accessible for azureuser (non-root) commands
+      ansible.builtin.shell: |
+        mkdir -p /home/{{ ansible_user }}/.kube
+        cp /etc/rancher/k3s/k3s.yaml /home/{{ ansible_user }}/.kube/config
+        chown {{ ansible_user }}:{{ ansible_user }} /home/{{ ansible_user }}/.kube/config
+      args:
+        creates: /home/{{ ansible_user }}/.kube/config
+    
+    - name: Persist KUBECONFIG env var for azureuser shell sessions
+      ansible.builtin.lineinfile:
+        path: /home/{{ ansible_user }}/.bashrc
+        line: 'export KUBECONFIG=$HOME/.kube/config'
+        create: true
