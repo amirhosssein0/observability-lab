@@ -1,0 +1,19 @@
+---
+- name: Install k3s on the lab server
+  hosts: k3s_servers
+  become: true
+
+  tasks:
+    - name: Install k3s (official install script)
+      ansible.builtin.shell: curl -sfL https://get.k3s.io | sh -
+      args:
+        creates: /usr/local/bin/k3s
+
+    - name: Verify k3s installation
+      ansible.builtin.command: k3s --version
+      register: k3s_version
+      changed_when: false
+
+    - name: Show installed version
+      ansible.builtin.debug:
+        var: k3s_version.stdout_lines
