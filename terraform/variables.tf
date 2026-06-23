@@ -36,7 +36,7 @@ variable "ssh_public_key_path" {
 variable "admin_source_ip" {
   description = "Your IP/CIDR allowed to reach the VM, e.g. \"1.2.3.4/32\". Run `curl ifconfig.me` to find yours. Avoid \"*\" once the lab is reachable -- fine temporarily, but tighten it."
   type        = string
-  default     = "63.141.252.202/32"
+  default     = "*"
 }
 
 variable "enable_auto_shutdown" {
