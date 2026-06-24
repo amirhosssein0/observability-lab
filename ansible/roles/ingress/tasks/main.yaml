@@ -1,0 +1,11 @@
+---
+- name: Copy Grafana Ingress manifest
+  ansible.builtin.copy:
+    src: grafana-ingress.yaml
+    dest: /tmp/grafana-ingress.yaml
+    mode: '0644'
+
+- name: Apply Grafana Ingress
+  ansible.builtin.command: kubectl apply -f /tmp/grafana-ingress.yaml
+  register: ingress_apply
+  changed_when: "'unchanged' not in ingress_apply.stdout"

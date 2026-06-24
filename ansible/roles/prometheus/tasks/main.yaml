@@ -1,0 +1,37 @@
+---
+- name: Add prometheus-community helm repo
+  ansible.builtin.command: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+  register: repo_add
+  changed_when: "'has been added' in repo_add.stdout"
+
+- name: Update helm repos
+  ansible.builtin.command: helm repo update
+  changed_when: false
+
+- name: Check if the prometheus release already exists
+  ansible.builtin.command: helm status prometheus -n monitoring
+  register: prometheus_status
+  failed_when: false
+  changed_when: false
+
+- name: Install kube-prometheus-stack via Helm
+  ansible.builtin.command: >
+    helm install prometheus prometheus-community/kube-prometheus-stack
+    --namespace monitoring
+    --create-namespace
+  when: prometheus_status.rc != 0
+  changed_when: true
+
+- name: Render Alertmanager SMTP values file
+  ansible.builtin.template:
+    src: alertmanager-values.yaml.j2
+    dest: /tmp/alertmanager-values.yaml
+    mode: '0600'
+
+- name: Configure Alertmanager email alerts via Helm upgrade
+  ansible.builtin.command: >
+    helm upgrade prometheus prometheus-community/kube-prometheus-stack
+    --namespace monitoring
+    --reuse-values
+    -f /tmp/alertmanager-values.yaml
+  changed_when: true

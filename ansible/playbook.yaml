@@ -18,12 +18,22 @@
       ansible.builtin.debug:
         var: k3s_version.stdout_lines
 
-- name: Install Helm and prepare kubeconfig access
+- name: Install Helm, Prometheus stack, and prepare kubeconfig access
   hosts: k3s_servers
   become: true
 
+  pre_tasks:
+    - name: Ensure KUBECONFIG is accessible for Helm commands
+      ansible.builtin.shell: |
+        mkdir -p /root/.kube
+        cp /etc/rancher/k3s/k3s.yaml /root/.kube/config
+      args:
+        creates: /root/.kube/config
+
   roles:
     - helm
+    - prometheus
+    - ingress
 
   tasks:
     - name: Ensure KUBECONFIG is accessible for azureuser (non-root) commands
@@ -33,7 +43,7 @@
         chown {{ ansible_user }}:{{ ansible_user }} /home/{{ ansible_user }}/.kube/config
       args:
         creates: /home/{{ ansible_user }}/.kube/config
-    
+
     - name: Persist KUBECONFIG env var for azureuser shell sessions
       ansible.builtin.lineinfile:
         path: /home/{{ ansible_user }}/.bashrc

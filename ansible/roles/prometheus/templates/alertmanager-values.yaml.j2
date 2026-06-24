@@ -1,0 +1,22 @@
+alertmanager:
+  config:
+    global:
+      resolve_timeout: 5m
+      smtp_smarthost: 'smtp.gmail.com:587'
+      smtp_from: '{{ gmail_smtp_user }}'
+      smtp_auth_username: '{{ gmail_smtp_user }}'
+      smtp_auth_password: '{{ gmail_app_password }}'
+      smtp_require_tls: true
+
+    route:
+      receiver: 'email-default'
+      group_by: ['alertname', 'namespace']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+
+    receivers:
+      - name: 'email-default'
+        email_configs:
+          - to: '{{ alert_email_to }}'
+            send_resolved: true
