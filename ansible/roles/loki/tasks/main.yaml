@@ -1,0 +1,37 @@
+---
+- name: Add grafana helm repo
+  ansible.builtin.command: helm repo add grafana https://grafana.github.io/helm-charts
+  register: repo_add
+  changed_when: "'has been added' in repo_add.stdout"
+
+- name: Update helm repos
+  ansible.builtin.command: helm repo update
+  changed_when: false
+
+- name: Check if the loki release already exists
+  ansible.builtin.command: helm status loki -n logging
+  register: loki_status
+  failed_when: false
+  changed_when: false
+
+- name: Install loki-stack (Loki + Promtail) via Helm
+  ansible.builtin.command: >
+    helm install loki grafana/loki-stack
+    --namespace logging
+    --create-namespace
+    --set promtail.enabled=true
+    --set grafana.enabled=false
+    --set grafana.sidecar.datasources.enabled=false
+  when: loki_status.rc != 0
+  changed_when: true
+
+- name: Copy Loki Grafana-datasource ConfigMap manifest
+  ansible.builtin.copy:
+    src: loki-grafana-datasource.yaml
+    dest: /tmp/loki-grafana-datasource.yaml
+    mode: '0644'
+
+- name: Apply Loki datasource ConfigMap (auto-discovered by Grafana sidecar)
+  ansible.builtin.command: kubectl apply -f /tmp/loki-grafana-datasource.yaml
+  register: datasource_apply
+  changed_when: "'unchanged' not in datasource_apply.stdout"

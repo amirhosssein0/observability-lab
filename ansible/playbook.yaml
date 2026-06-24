@@ -18,7 +18,7 @@
       ansible.builtin.debug:
         var: k3s_version.stdout_lines
 
-- name: Install Helm, Prometheus stack, and prepare kubeconfig access
+- name: Install Helm, Prometheus stack, Loki, Ingress, and prepare kubeconfig access
   hosts: k3s_servers
   become: true
 
@@ -30,9 +30,20 @@
       args:
         creates: /root/.kube/config
 
+    - name: Check if the logging namespace exists
+      ansible.builtin.command: kubectl get namespace logging
+      register: logging_ns
+      failed_when: false
+      changed_when: false
+
+    - name: Create the logging namespace
+      ansible.builtin.command: kubectl create namespace logging
+      when: logging_ns.rc != 0
+
   roles:
     - helm
     - prometheus
+    - loki
     - ingress
 
   tasks:

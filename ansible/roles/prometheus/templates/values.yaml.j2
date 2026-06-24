@@ -1,5 +1,8 @@
 grafana:
   adminPassword: "{{ grafana_admin_password }}"
+  sidecar:
+    datasources:
+      searchNamespace: "ALL"
 
 prometheus:
   prometheusSpec:
