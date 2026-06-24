@@ -22,16 +22,23 @@
   when: prometheus_status.rc != 0
   changed_when: true
 
+- name: Render core values file (Grafana admin password, Prometheus retention)
+  ansible.builtin.template:
+    src: values.yaml.j2
+    dest: /tmp/prometheus-values.yaml
+    mode: '0600'
+
 - name: Render Alertmanager SMTP values file
   ansible.builtin.template:
     src: alertmanager-values.yaml.j2
     dest: /tmp/alertmanager-values.yaml
     mode: '0600'
 
-- name: Configure Alertmanager email alerts via Helm upgrade
+- name: Apply core + Alertmanager values via Helm upgrade
   ansible.builtin.command: >
     helm upgrade prometheus prometheus-community/kube-prometheus-stack
     --namespace monitoring
     --reuse-values
+    -f /tmp/prometheus-values.yaml
     -f /tmp/alertmanager-values.yaml
   changed_when: true
