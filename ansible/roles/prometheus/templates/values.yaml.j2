@@ -7,8 +7,3 @@ grafana:
 prometheus:
   prometheusSpec:
     retention: 7d
-    routePrefix: /prometheus
-    serviceMonitorNamespaceSelector: {}
-    serviceMonitorSelector:
-      matchLabels:
-        release: prometheus
