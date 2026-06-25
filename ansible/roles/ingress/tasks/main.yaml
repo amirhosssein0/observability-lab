@@ -9,3 +9,14 @@
   ansible.builtin.command: kubectl apply -f /tmp/grafana-ingress.yaml
   register: ingress_apply
   changed_when: "'unchanged' not in ingress_apply.stdout"
+
+- name: Copy Prometheus Ingress manifest
+  ansible.builtin.copy:
+    src: prometheus-ingress.yaml
+    dest: /tmp/prometheus-ingress.yaml
+    mode: '0644'
+
+- name: Apply Prometheus Ingress
+  ansible.builtin.command: kubectl apply -f /tmp/prometheus-ingress.yaml
+  register: ingress_apply
+  changed_when: "'unchanged' not in ingress_apply.stdout"
