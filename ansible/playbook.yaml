@@ -45,6 +45,7 @@
     - prometheus
     - loki
     - ingress
+    - app
 
   tasks:
     - name: Ensure KUBECONFIG is accessible for azureuser (non-root) commands

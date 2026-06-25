@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: observability-app
+  namespace: app
+  labels:
+    release: prometheus    
+spec:
+  selector:
+    matchLabels:
+      app: observability
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+  namespaceSelector:
+    matchNames:
+      - app

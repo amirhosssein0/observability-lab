@@ -1,0 +1,32 @@
+---
+- name: Check if app namespace exists
+  ansible.builtin.command: kubectl get namespace app
+  register: app_ns
+  failed_when: false
+  changed_when: false
+
+- name: Create app namespace
+  ansible.builtin.command: kubectl create namespace app
+  when: app_ns.rc != 0
+
+- name: Copy app deployment and service manifest
+  ansible.builtin.copy:
+    src: deployment.yaml
+    dest: /tmp/deployment.yaml
+    mode: '0644'
+
+- name: Copy ServiceMonitor manifest
+  ansible.builtin.copy:
+    src: servicemonitor.yaml
+    dest: /tmp/servicemonitor.yaml
+    mode: '0644'
+
+- name: Apply app deployment and service
+  ansible.builtin.command: kubectl apply -f /tmp/deployment.yaml
+  register: deploy_apply
+  changed_when: "'unchanged' not in deploy_apply.stdout"
+
+- name: Apply ServiceMonitor
+  ansible.builtin.command: kubectl apply -f /tmp/servicemonitor.yaml
+  register: sm_apply
+  changed_when: "'unchanged' not in sm_apply.stdout"
