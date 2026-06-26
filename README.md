@@ -153,10 +153,10 @@ observability-lab/
 ![Prometheus targets](docs/screenshots/prometheus-targets.png)
 
 ### Email notification sent the moment the SLO breach fires
-![Alert email — firing](docs/screenshots/alert-email-firing.jpg)
+![Alert email — firing](docs/screenshots/Screenshot_20260626_131943_Gmail.jpg)
 
 ### Resolved notification once availability recovered
-![Alert email — resolved](docs/screenshots/alert-email-resolved.jpg)
+![Alert email — resolved](docs/screenshots/Screenshot_20260626_132801_Gmail.jpg)
 
 ---
 
@@ -172,7 +172,7 @@ terraform apply
 ### 2. Configure & deploy everything
 ```bash
 cd ../ansible
-cp group_vars/all/secrets.yml.example group_vars/all/secrets.yml   # fill in SMTP + Grafana password
+cp group_vars/all/secrets.yaml.example group_vars/all/secrets.yaml   # fill in SMTP + Grafana password
 ./generate-inventory.sh                                            # pulls the IP from terraform output
 ansible-playbook -i inventory.ini playbook.yaml
 ```
