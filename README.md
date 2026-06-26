@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="https://simpleicons.org/icons/ansible.svg" width="60" alt="Ansible" />
+<img src="https://cdn.simpleicons.org/ansible/EE0000" width="60" alt="Ansible" />
 &nbsp;&nbsp;&nbsp;
-<img src="https://simpleicons.org/icons/grafana.svg" width="60" alt="Grafana" />
+<img src="https://cdn.simpleicons.org/grafana/F46800" width="60" alt="Grafana" />
 &nbsp;&nbsp;&nbsp;
-<img src="https://simpleicons.org/icons/prometheus.svg" width="60" alt="Prometheus" />
+<img src="https://cdn.simpleicons.org/prometheus/E6522C" width="60" alt="Prometheus" />
 &nbsp;&nbsp;&nbsp;
 <img src="https://grafana.com/static/img/logos/logo-loki.svg" width="60" alt="Loki" />
 
