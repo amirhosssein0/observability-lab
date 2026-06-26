@@ -189,7 +189,6 @@ ansible-playbook -i inventory.ini playbook.yaml
 |---|---|
 | `GET /health` | Liveness check |
 | `GET /ready` | Readiness check |
-| `GET /version` | App version |
 | `GET /work` | Simulated workload, ~10% failure rate — the endpoint behind every SLI/SLO |
 | `GET /metrics` | Prometheus scrape endpoint |
 
