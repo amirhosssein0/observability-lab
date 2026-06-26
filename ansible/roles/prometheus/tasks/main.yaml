@@ -42,3 +42,14 @@
     -f /tmp/prometheus-values.yaml
     -f /tmp/alertmanager-values.yaml
   changed_when: true
+
+- name: Copy SLO Rules manifest
+  ansible.builtin.copy:
+    src: slo-rules.yaml
+    dest: /tmp/slo-rules.yaml
+    mode: '0644'
+
+- name: Apply app SLO Rules and service
+  ansible.builtin.command: kubectl apply -f /tmp/slo-rules.yaml
+  register: deploy_apply
+  changed_when: "'unchanged' not in deploy_apply.stdout"

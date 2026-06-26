@@ -1,0 +1,34 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: observability-app-slo
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: observability-app.slo
+      rules:
+        - alert: SLOAvailabilityBreach
+          expr: |
+            (
+              sum(rate(http_requests_total{path="/work", status!~"5.."}[5m]))
+              /
+              sum(rate(http_requests_total{path="/work"}[5m]))
+            ) < 0.90
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Availability SLO breached for /work endpoint"
+            description: "Availability has dropped below the 90% SLO threshold for more than 2 minutes."
+
+        - alert: SLOLatencyBreach
+          expr: |
+            histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{path="/work"}[5m])) > 0.2
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "p95 latency SLO breached for /work endpoint"
+            description: "p95 latency has exceeded 200ms for more than 2 minutes."
