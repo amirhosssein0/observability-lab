@@ -1,0 +1,120 @@
+{
+  "title": "Observability Lab — SLI Dashboard",
+  "uid": "observability-lab-sli",
+  "timezone": "utc",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Availability SLI (/work)",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "default" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{path=\"/work\", status!~\"5..\"}[5m])) / sum(rate(http_requests_total{path=\"/work\"}[5m])) * 100",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 85 },
+              { "color": "green", "value": 90 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "title": "p95 Latency (/work)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "default" },
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{path=\"/work\"}[5m])) * 1000",
+          "legendFormat": "p95 latency (ms)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 200 }
+            ]
+          },
+          "custom": {
+            "thresholdsStyle": { "mode": "line" }
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "title": "Request Rate by Status Code (/work)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "default" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{path=\"/work\"}[5m])) by (status)",
+          "legendFormat": "status {{status}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "title": "Error Budget Remaining (30d, 90% SLO)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "default" },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "(sum(rate(http_requests_total{path=\"/work\", status!~\"5..\"}[30d])) / sum(rate(http_requests_total{path=\"/work\"}[30d])) - 0.90) / (1 - 0.90) * 100",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 0 },
+              { "color": "green", "value": 50 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    }
+  ]
+}
