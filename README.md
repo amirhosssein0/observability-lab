@@ -206,5 +206,5 @@ Alertmanager is configured with Gmail SMTP and sends an email on both `firing` a
 ---
 
 <div align="center">
-<sub>Built as a DevOps/SRE portfolio project — infrastructure, deployment, and observability, all as code.</sub>
+<sub>Part of a DevOps portfolio — <a href="https://github.com/amirhosssein0/terraform-lab">terraform-lab</a> | <a href="https://github.com/amirhosssein0/vault-cicd-lab">vault-cicd-lab</a></sub>
 </div>
