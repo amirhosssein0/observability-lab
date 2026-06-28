@@ -1,0 +1,48 @@
+---
+- name: Add grafana helm repo
+  ansible.builtin.command: helm repo add grafana https://grafana.github.io/helm-charts
+  register: repo_add
+  changed_when: "'has been added' in repo_add.stdout"
+
+- name: Update helm repos
+  ansible.builtin.command: helm repo update
+  changed_when: false
+
+- name: Check if the tempo release already exists
+  ansible.builtin.command: helm status tempo -n tracing
+  register: tempo_status
+  failed_when: false
+  changed_when: false
+
+- name: Install Tempo via Helm
+  ansible.builtin.command: >
+    helm install tempo grafana/tempo
+    --namespace tracing
+    --create-namespace
+  when: tempo_status.rc != 0
+  changed_when: true
+
+- name: Render Tempo values file
+  ansible.builtin.template:
+    src: values.yaml.j2
+    dest: /tmp/tempo-values.yaml
+    mode: '0644'
+
+- name: Apply Tempo values via Helm upgrade
+  ansible.builtin.command: >
+    helm upgrade tempo grafana/tempo
+    --namespace tracing
+    --reuse-values
+    -f /tmp/tempo-values.yaml
+  changed_when: true
+
+- name: Copy Tempo Grafana-datasource ConfigMap manifest
+  ansible.builtin.copy:
+    src: tempo-grafana-datasource.yaml
+    dest: /tmp/tempo-grafana-datasource.yaml
+    mode: '0644'
+
+- name: Apply Tempo datasource ConfigMap (auto-discovered by Grafana sidecar)
+  ansible.builtin.command: kubectl apply -f /tmp/tempo-grafana-datasource.yaml
+  register: datasource_apply
+  changed_when: "'unchanged' not in datasource_apply.stdout"
