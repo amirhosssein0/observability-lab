@@ -20,7 +20,7 @@ spec:
           limits:
             memory: "128Mi"
             cpu: "500m"
-        envs:
+        env:
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
           value: "tempo.tracing.svc.cluster.local:4317"
         ports:
