@@ -3,6 +3,9 @@ grafana:
   sidecar:
     datasources:
       searchNamespace: "ALL"
+      exemplarTraceIdDestinations:
+        datasourceUid: tempo
+        traceIdLabelName: trace_id
 
 prometheus:
   prometheusSpec:

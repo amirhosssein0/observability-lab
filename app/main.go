@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log/slog"
 	"math/rand"
 	"net/http"
@@ -11,6 +13,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -36,6 +47,40 @@ func init() {
 	prometheus.MustRegister(httpRequestsTotal, httpRequestDuration)
 }
 
+// initTracer wires up the OpenTelemetry SDK to export spans to Tempo via OTLP/gRPC.
+func initTracer(ctx context.Context) (func(context.Context) error, error) {
+	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+	if endpoint == "" {
+		endpoint = "tempo.tracing.svc.cluster.local:4317"
+	}
+
+	exporter, err := otlptracegrpc.New(ctx,
+		otlptracegrpc.WithEndpoint(endpoint),
+		otlptracegrpc.WithInsecure(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := resource.New(ctx,
+		resource.WithAttributes(attribute.String("service.name", "observability-lab-app")),
+		resource.WithFromEnv(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(res),
+	)
+
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+
+	return tp.Shutdown, nil
+}
+
 // observabilityMiddleware records metrics and structured logs for every request.
 // Only routes registered with Gin (c.FullPath() non-empty) are labeled by their
 // route pattern; anything else (404s, unknown paths) is bucketed under "unmatched"
@@ -53,8 +98,20 @@ func observabilityMiddleware(logger *slog.Logger) gin.HandlerFunc {
 		}
 		status := c.Writer.Status()
 
+		span := trace.SpanFromContext(c.Request.Context())
+		var traceID string
+		if sc := span.SpanContext(); sc.IsValid() {
+			traceID = sc.TraceID().String()
+		}
+
 		httpRequestsTotal.WithLabelValues(path, strconv.Itoa(status)).Inc()
-		httpRequestDuration.WithLabelValues(path).Observe(duration.Seconds())
+
+		observer := httpRequestDuration.WithLabelValues(path)
+		if hist, ok := observer.(prometheus.ExemplarObserver); ok && traceID != "" {
+			hist.ObserveWithExemplar(duration.Seconds(), prometheus.Labels{"trace_id": traceID})
+		} else {
+			observer.Observe(duration.Seconds())
+		}
 
 		logger.Info("http_request",
 			"timestamp", start.UTC().Format(time.RFC3339Nano),
@@ -63,6 +120,7 @@ func observabilityMiddleware(logger *slog.Logger) gin.HandlerFunc {
 			"raw_path", c.Request.URL.Path,
 			"status", status,
 			"duration_ms", duration.Milliseconds(),
+			"trace_id", traceID,
 		)
 	}
 }
@@ -76,12 +134,16 @@ func readyHandler(c *gin.Context) {
 }
 
 // workHandler simulates variable-latency work with an occasional failure,
-// so Prometheus/Grafana and Loki have realistic signal to observe.
+// so Prometheus/Grafana, Loki and Tempo have realistic signal to observe.
 func workHandler(c *gin.Context) {
+	span := trace.SpanFromContext(c.Request.Context())
+
 	sleepMs := rand.Intn(191) + 10 // 10ms - 200ms
 	time.Sleep(time.Duration(sleepMs) * time.Millisecond)
 
 	if rand.Float64() < 0.10 {
+		span.RecordError(fmt.Errorf("simulated failure"))
+		span.SetStatus(codes.Error, "simulated failure")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "simulated failure"})
 		return
 	}
@@ -95,8 +157,29 @@ func main() {
 	}))
 	slog.SetDefault(logger)
 
+	ctx := context.Background()
+	shutdownTracer, err := initTracer(ctx)
+	if err != nil {
+		logger.Error("failed to init tracer", "error", err)
+		os.Exit(1)
+	}
+	defer func() {
+		if err := shutdownTracer(context.Background()); err != nil {
+			logger.Error("tracer shutdown error", "error", err)
+		}
+	}()
+
 	r := gin.New()
 	r.Use(gin.Recovery())
+	r.Use(otelgin.Middleware("observability-lab-app",
+		otelgin.WithFilter(func(req *http.Request) bool {
+			switch req.URL.Path {
+			case "/health", "/ready", "/metrics":
+				return false
+			}
+			return true
+		}),
+	))
 	r.Use(observabilityMiddleware(logger))
 
 	r.GET("/health", healthHandler)
