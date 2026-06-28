@@ -8,7 +8,7 @@
 &nbsp;&nbsp;&nbsp;
 <img src="https://grafana.com/static/img/logos/logo-loki.svg" width="60" alt="Loki" />
 &nbsp;&nbsp;&nbsp;
-<img src="https://grafana.com/static/img/logos/logo-tempo.svg" width="60" alt="Tempo" />
+<img src="https://raw.githubusercontent.com/grafana/tempo/main/docs/sources/tempo/latest/getting-started/assets/grafana-icon.png" width="60" alt="Tempo" />
 &nbsp;&nbsp;&nbsp;
 <img src="https://cdn.simpleicons.org/opentelemetry/425CC7" width="60" alt="OpenTelemetry" />
 
