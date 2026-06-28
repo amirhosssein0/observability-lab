@@ -16,11 +16,10 @@ grafana:
       jsonData:
         tracesToLogsV2:
           datasourceUid: loki
-          filterByTraceID: true
+          filterByTraceID: false
           filterBySpanID: false
-          customQuery: false
-          tags:
-            - key: trace_id
+          customQuery: true
+          query: '{app="observability-lab-app"} | json | trace_id="${__trace.traceId}"'
         serviceMap:
           datasourceUid: prometheus
 
