@@ -7,6 +7,29 @@ grafana:
         datasourceUid: tempo
         traceIdLabelName: trace_id
 
+  additionalDataSources:
+    - name: Tempo
+      type: tempo
+      uid: tempo
+      url: http://tempo.tracing.svc.cluster.local:3200
+      access: proxy
+      jsonData:
+        tracesToLogsV2:
+          datasourceUid: loki
+          filterByTraceID: true
+          filterBySpanID: false
+          customQuery: false
+          tags:
+            - key: trace_id
+        serviceMap:
+          datasourceUid: prometheus
+
+    - name: Loki
+      type: loki
+      uid: loki
+      url: http://loki.logging.svc.cluster.local:3100
+      access: proxy
+
 prometheus:
   prometheusSpec:
     retention: 7d
